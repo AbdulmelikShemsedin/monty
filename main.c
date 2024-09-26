@@ -17,6 +17,69 @@ void free_stack(stack_t *stack)
 }
 
 /**
+ * getline - Reads an entire line from the file stream.
+ * @lineptr: A pointer to the buffer where the input line will be stored.
+ * @n: A pointer to the size of the buffer.
+ * @stream: The input stream to read from.
+ *
+ * Return: The number of characters read, or -1 on failure.
+ */
+int getline(char **lineptr, size_t *n, FILE *stream)
+{
+    size_t pos = 0, i;
+    int c;
+
+    if (*lineptr == NULL || *n == 0)
+    {
+        *n = 128;  /* Initial buffer size */
+        *lineptr = malloc(*n);
+        if (*lineptr == NULL)
+        {
+            return -1;
+        }
+    }
+
+    while ((c = fgetc(stream)) != EOF)
+    {
+        if (pos + 1 >= *n)
+        {
+            char *new_ptr;
+            *n *= 2;  /* Double the buffer size */
+
+            new_ptr = malloc(*n);
+            if (new_ptr == NULL)
+            {
+                return -1;
+            }
+
+            /* Copy the existing buffer content to the new one */
+            for (i = 0; i < pos; i++)
+            {
+                new_ptr[i] = (*lineptr)[i];
+            }
+
+            free(*lineptr);
+            *lineptr = new_ptr;
+        }
+
+        (*lineptr)[pos++] = c;
+
+        if (c == '\n')
+        {
+            break;
+        }
+    }
+
+    if (pos == 0 && c == EOF)
+    {
+        return -1;
+    }
+
+    (*lineptr)[pos] = '\0';
+    return pos;
+}
+
+/**
  * execute_opcode - Executes the given opcode by matching it to the correct function.
  * @stack: Pointer to the stack.
  * @opcode: The opcode to execute.
@@ -26,7 +89,6 @@ void free_stack(stack_t *stack)
 void execute_opcode(stack_t **stack, char *opcode, char *arg, unsigned int line_number)
 {
     instruction_t instructions[] = {
-        {"push", push},
         {"pall", pall},
         {"pint", pint},
         {"pop", pop},
@@ -36,6 +98,12 @@ void execute_opcode(stack_t **stack, char *opcode, char *arg, unsigned int line_
         {NULL, NULL}
     };
     int i = 0;
+
+    if (strcmp(opcode, "push") == 0)
+    {
+        push(stack, line_number, arg);
+        return;
+    }
 
     while (instructions[i].opcode)
     {
@@ -47,7 +115,8 @@ void execute_opcode(stack_t **stack, char *opcode, char *arg, unsigned int line_
         i++;
     }
 
-    fprintf(stderr, "L%u: unknown instruction %s\n", line_number, opcode);
+    (void)arg;
+    fprintf(stderr, "L%d: unknown instruction %s\n", line_number, opcode);
     exit(EXIT_FAILURE);
 }
 
