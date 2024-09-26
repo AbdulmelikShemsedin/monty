@@ -64,7 +64,7 @@ return (pos);
 }
 
 /**
-* execute_opcode - Executes the given opcode by matching it 
+* execute_opcode - Executes the given opcode by matching it
 * to the correct function.
 * @stack: Pointer to the stack.
 * @opcode: The opcode to execute.
